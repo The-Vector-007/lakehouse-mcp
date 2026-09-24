@@ -15,6 +15,8 @@ import sys
 from mcp.server.fastmcp import FastMCP
 
 from lakehouse_mcp.config import AccessDenied, Config
+from lakehouse_mcp.jobs import AirflowConfig, OrchestratorUnavailable
+from lakehouse_mcp.jobs import job_runs as _job_runs
 from lakehouse_mcp.query import read_dq_results, run_query
 from lakehouse_mcp.safety import UnsafeQuery
 from lakehouse_mcp.tables import find_tables, get_schema, table_history
@@ -105,6 +107,22 @@ def dq_results(path: str | None = None, limit: int = 50) -> dict:
     try:
         return read_dq_results(_config, table_path=path, limit=limit)
     except (AccessDenied, FileNotFoundError, UnsafeQuery) as exc:
+        return _fail(exc)
+
+
+@mcp.tool()
+def job_runs(dag_id: str | None = None, limit: int = 20) -> dict:
+    """Recent orchestrator runs and their state, newest first.
+
+    Answers the question that follows every data-quality alert: the numbers look
+    wrong, did the job even run? Pass a `dag_id` to also get the per-task
+    breakdown of the latest run, which is the "which step broke?" view.
+
+    Needs AIRFLOW_API_URL set; without it you get a message saying so.
+    """
+    try:
+        return _job_runs(AirflowConfig.from_env(), dag_id=dag_id, limit=limit)
+    except OrchestratorUnavailable as exc:
         return _fail(exc)
 
 

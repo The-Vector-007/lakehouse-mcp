@@ -2,7 +2,7 @@
 
 **An MCP server that lets AI agents operate your lakehouse.** Point Claude (or any MCP client) at your Delta tables and it can inspect schemas, walk table history, run read-only queries, check data-quality results, and watch job runs — safely.
 
-> 🚧 **Status: the five read tools work; `job_runs` is not built.** 52 tests pass.
+> ✅ **Status: all six tools work.** 57 tests pass.
 > The roadmap below tracks what is actually real.
 
 ## Why
@@ -20,7 +20,7 @@ No JVM, no Spark cluster: built on **delta-rs and DuckDB**, so it installs with 
 | `table_history` | Delta transaction log — versions, operations, timestamps |
 | `query` | Read-only SQL via DuckDB, row-limited, time-travel aware |
 | `dq_results` | Latest data-quality check outcomes per table |
-| `job_runs` | *Not built.* Recent orchestrator runs and their status (Airflow first) |
+| `job_runs` | Recent Airflow runs and their state, with a per-task breakdown |
 
 ## Usage
 
@@ -68,13 +68,18 @@ never reasons about a short answer as though it were complete.
 - [x] Project scaffold
 - [x] P1 — `list_tables`, `get_schema`, `query` against local Delta tables
 - [x] P2 — `table_history` + time-travel queries
-- [~] P3 — `dq_results` done; `job_runs` (Airflow API) not built
+- [x] P3 — `dq_results` + `job_runs` (Airflow REST API)
 - [ ] P4 — PyPI release, demo GIF against [Streamhouse](https://github.com/The-Vector-007/streamhouse)
 - [x] P5 — Hardening: statement allowlist, filesystem lockdown, row caps, path allowlist
 
 Verified against a real lakehouse: the six Delta tables Streamhouse produces
 (bronze, bronze_dlq, silver, quarantine, dq_results, gold), including time travel
-and the data-quality history.
+and the data-quality history, plus `job_runs` against a live Airflow running
+Streamhouse's daily DAG.
+
+`job_runs` needs `AIRFLOW_API_URL` set, plus `AIRFLOW_USERNAME` and
+`AIRFLOW_PASSWORD` if the API requires auth. Without it the tool says so rather
+than failing obscurely.
 
 ## License
 
